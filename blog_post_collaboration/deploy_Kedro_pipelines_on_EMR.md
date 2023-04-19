@@ -1,18 +1,21 @@
-# Title TBD
+# Title TBD. Maybe "Seven steps to deploy Kedro pipelines on AWS EMR" ??
 
 ## Introduction
 
+
+[Amazon EMR](https://aws.amazon.com/emr/) (previously called Amazon Elastic MapReduce) is a managed cluster platform that simplifies running big data frameworks, such as Apache Hadoop and Apache Spark, to process and analyze vast amounts of data with AWS.
+
+> TO DO 
+This section needs another sentence or two to set the scene on a typical use case of getting Kedro working with EMR.
+
 ## 1. Set up the cluster environment
 
-In order to install `python` libraries on EMR, packaging a
-virtual environment, and deploying to EMR is a neat option. For creating
-and packaging a virtualenv, it needs to have the [same Amazon Linux 2
-environment as [used by EMR](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide)
+In order to install Python libraries on EMR, packaging a virtual environment and deploying it to EMR is a neat option. 
 
-[Refer to this Dockerfile](https://github.com/aws-samples/emr-serverless-samples/tree/main/examples/pyspark/dependencies) for packaging your dependencies on an Amazon
-Linux 2 base. 
+To create and package a virtual environment the cluster needs to have the [same Amazon Linux 2
+environment as used by EMR](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide).
 
-An example Dockerfile is as below: 
+To find out more about how to package your dependencies on an Amazon Linux 2 base, we used this [example Dockerfile](https://github.com/aws-samples/emr-serverless-samples/tree/main/examples/pyspark/dependencies). Our example Dockerfile is as below: 
 
 ```text
 FROM --platform=linux/amd64 amazonlinux:2 AS base 
@@ -36,16 +39,14 @@ COPY --from=base /output/pyspark_deps.tar.gz /
 ```
 
 
-`DOCKER_BUILDKIT` backend is necessary to run this Dockerfile (make sure
-you have it installed).
+> Note: A `DOCKER_BUILDKIT` backend is necessary to run this Dockerfile (make sure you have it installed).
 
-Run the `Dockerfile`  using the following command. This will generate a
-`pyspark_deps.tar.gz`  file at the  `<output-path>`  specified in the
-command above. 
+Run the Dockerfile  using the following command. This will generate a `pyspark_deps.tar.gz`  file at the  `<output-path>`  specified in the command above. 
 
 ```bash
 DOCKER_BUILDKIT=1 docker build --output . <output-path> 
 ```
+
 Use this command if your Dockerfile has a different name 
 
 ```bash
@@ -53,10 +54,8 @@ DOCKER_BUILDKIT=1 docker build -f Dockerfile-emr-venv --output . <output-path>
 ```
 
 ## 2. Set up `CONF_ROOT`
-By default, Kedro looks at the root `conf` folder for
-all its configurations (catalog, parameters, globals, credentials,
-logging) to run the pipelines. However, this can be customized by
-changing `CONF_ROOT`  in `settings.py`. 
+
+By default, Kedro looks at the root `conf` folder for all its configurations (catalog, parameters, globals, credentials, logging) to run the pipelines. However, [this can be customized](https://docs.kedro.org/en/stable/kedro_project_setup/configuration.html#configuration-root) by changing `CONF_ROOT`  in `settings.py`. 
 
 As `conf` directory is not packaged together with `kedro package`, the `conf` directory needs to be available to Kedro separately and that location can be controlled by setting `CONF_ROOT`. 
 
@@ -81,17 +80,10 @@ kedro package
 
 ## 4. Create `.tar` for `conf`
 
-The `kedro package` command only packs the source code. 
+The `kedro package` command only packs the source code and yet the `conf/` directory is essential for running any Kedro project.
 
-`conf/` directory is essential for running any Kedro project.
-
-Therefore it needs to be deployed separately as a `tar.gz`  file. It is
-important to note that the contents inside the `conf` directory is
-to be zipped and not the `conf`  folder entirely. Use the following
-command to zip the contents inside the conf directory. This will
-generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used
-with `spark-submit` for the `--archives` option for unpacking
-the contents into a `conf` directory .
+Therefore it needs to be deployed separately as a `tar.gz`  file. It is important to note that the contents inside the `conf` directory is
+to be zipped and not the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory. This will generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory .
 
 ```bash
 tar -czvf conf.tar.gz --exclude="local" conf/*
@@ -99,8 +91,7 @@ tar -czvf conf.tar.gz --exclude="local" conf/*
 
 ## 5. Create entrypoint For Spark application 
 
-Create an `entrypoint.py` file that the Spark Application will
-use to start the job. 
+Create an `entrypoint.py` file that the Spark Application will use to start the job. 
 
 Example below:
 
@@ -134,16 +125,14 @@ main(sys.argv)
 
 # 6. Upload relevant files to S3
 
-Upload the relevant files to an S3 bucket (EMR should have
-access to this bucket), in order to run the Spark Job. The following
-artifacts should be uploaded to S3:
+Upload the relevant files to an S3 bucket (EMR should have access to this bucket), in order to run the Spark Job. The following artifacts should be uploaded to S3:
 
 -   .egg [file created in step #3]
 -   Virtual Environment `.tar.gz` created in step 1 (e.g. `pyspark_deps.tar.gz`)
 -   `tar` file for `conf` folder created in step #4 (e.g. `conf.tar.gz`)
 -   `entrypoint.py` file created in step #5.
 
-# Spark submit to EMR cluster
+# 7. Spark submit to EMR cluster
 
 Use the following `spark-submit` command as a `step` on EMR running in **cluster** mode. Few points to note:
 
@@ -168,5 +157,9 @@ spark-submit
     s3://{S3_BUCKET}/run.py --env base --pipeline my_new_pipeline --params run_date:2023-03-07,runtime:cloud
 ```
 
+## Summary
 
+> TO DO
+Need to close off this post with a summary of what the steps were and the result, and confirm how you know it's working perhaps??
 
+Also add a note on who to contact for more help (probably get on the Slack organisation)
