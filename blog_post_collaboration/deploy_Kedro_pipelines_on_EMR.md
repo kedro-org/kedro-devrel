@@ -66,7 +66,7 @@ As `conf` directory is not packaged together with `kedro package`, the `conf` di
 
 ## 3. Package the Kedro project
 
-Package the project using `kedro package`  command. This will create a `.egg` in the `dist`  folder. 
+Package the project using `kedro package`  command. This will create a `.whl` in the `dist`  folder. 
 
 This will be used when doing `spark-submit` to the EMR cluster for specifying the `--py-files` to refer to the source code. 
 
@@ -124,7 +124,7 @@ main(sys.argv)
 
 Upload the relevant files to an S3 bucket (EMR should have access to this bucket), in order to run the Spark Job. The following artifacts should be uploaded to S3:
 
--   .egg [file created in step #3]
+-   .whl [file created in step #3]
 -   Virtual Environment `.tar.gz` created in step 1 (e.g. `pyspark_deps.tar.gz`)
 -   `tar` file for `conf` folder created in step #4 (e.g. `conf.tar.gz`)
 -   `entrypoint.py` file created in step #5.
@@ -144,7 +144,7 @@ Use the following `spark-submit` command as a `step` on EMR running in **cluster
 spark-submit 
     --deploy-mode cluster 
     --master yarn 
-    --conf spark.submit.pyFiles=s3://{S3_BUCKET}/<egg-file>.egg
+    --conf spark.submit.pyFiles=s3://{S3_BUCKET}/<whl-file>.whl
     --archives=s3://{S3_BUCKET}/pyspark_deps.tar.gz#environment,s3://{S3_BUCKET}/conf.tar.gz#conf
     --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=environment/bin/python
     --conf spark.executorEnv.PYSPARK_PYTHON=environment/bin/python 
