@@ -10,12 +10,9 @@ This section needs another sentence or two to set the scene on a typical use cas
 
 ## 1. Set up the cluster environment
 
-In order to install Python libraries on EMR, packaging a virtual environment and deploying it to EMR is a neat option. 
+One way to install Python libraries onto EMR is to package a virtual environment and deploy it to EMR. To do this, the cluster needs to have the [same Amazon Linux 2 environment as used by EMR](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide).
 
-To create and package a virtual environment the cluster needs to have the [same Amazon Linux 2
-environment as used by EMR](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide).
-
-To find out more about how to package your dependencies on an Amazon Linux 2 base, we used this [example Dockerfile](https://github.com/aws-samples/emr-serverless-samples/tree/main/examples/pyspark/dependencies). Our example Dockerfile is as below: 
+We used this [example Dockerfile](https://github.com/aws-samples/emr-serverless-samples/tree/main/examples/pyspark/dependencies) to package our dependencies on an Amazon Linux 2 base. Our example Dockerfile is as below: 
 
 ```text
 FROM --platform=linux/amd64 amazonlinux:2 AS base 
@@ -82,8 +79,8 @@ kedro package
 
 The `kedro package` command only packs the source code and yet the `conf/` directory is essential for running any Kedro project.
 
-Therefore it needs to be deployed separately as a `tar.gz`  file. It is important to note that the contents inside the `conf` directory is
-to be zipped and not the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory. This will generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory .
+Therefore it needs to be deployed separately as a `tar.gz`  file. It is important to note that the contents inside the `conf` directory needs
+to be zipped and **not** the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory and generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory .
 
 ```bash
 tar -czvf conf.tar.gz --exclude="local" conf/*
