@@ -107,17 +107,23 @@ import sys
 from proj_name.__main__ import main: 
 
 if __name__ == "__main__":
-# params = [ 
-# "--pipeline", 
-# "my_new_pipeline", 
-# "--runner", 
-# "ThreadRunner", 
-# "--params", 
-# "run_date:2023-02-05,runtime:cloud", 
-# ] 
-# main(params) 
+	"""
+	These params could be used as *args to 
+	test pipelines locally. The example below 
+	will run `my_new_pipeline` using `ThreadRunner`
+	applying a set of params
+	params = [ 
+		"--pipeline", 
+		"my_new_pipeline", 
+		"--runner", 
+		"ThreadRunner", 
+		"--params", 
+		"run_date:2023-02-05,runtime:cloud", 
+	] 
+	main(params) 
+	"""
 
-main(sys.argv)
+	main(sys.argv)
 ```
 
 # 6. Upload relevant files to S3
