@@ -1,7 +1,5 @@
 # Seven steps to deploy Kedro pipelines on Amazon EMR
 
-## Introduction
-
 
 [Amazon EMR](https://aws.amazon.com/emr/) (previously called Amazon Elastic MapReduce) is a managed cluster platform for applications built using open source big data frameworks, such as Apache Spark, that process and analyze vast amounts of data with AWS. This post explains how to launch an Amazon EMR cluster and deploy a Kedro project to run a Spark job.
 
@@ -80,15 +78,15 @@ kedro package
 The `kedro package` command only packs the source code and yet the `conf/` directory is essential for running any Kedro project.
 
 Therefore it needs to be deployed separately as a `tar.gz`  file. It is important to note that the contents inside the `conf` directory needs
-to be zipped and **not** the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory and generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory .
+to be zipped and **not** the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory and generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory.
 
 ```bash
 tar -czvf conf.tar.gz --exclude="local" conf/*
 ```
 
-## 5. Create entrypoint For Spark application 
+## 5. Create an entrypoint for the Spark application 
 
-Create an `entrypoint.py` file that the Spark Application will use to start the job. 
+Create an `entrypoint.py` file that the Spark application will use to start the job. 
 
 Example below:
 
@@ -157,7 +155,7 @@ spark-submit
     --conf spark.yarn.appMasterEnv.<env-var-here>={ENV} 
     --conf spark.executorEnv.<env-var-here>={ENV} 
     
-    s3://{S3_BUCKET}/run.py --env base --pipeline my_new_pipeline --params run_date:2023-03-07,runtime:cloud
+    s3://{S3_BUCKET}/run.py --env base --pipeline my_new_pipeline --params run_date:2023-03-07,runtime:cloud      
 ```
 
 ## Summary
@@ -175,3 +173,6 @@ This post describes the sequence of steps needed to deploy a Kedro project to an
 Kedro supports a range of deployment targets including Amazon SageMaker, Databricks, Vertex AI and Azure ML, and our documentation additionally includes a range of approaches for single-machine deployment to a production server.
 
 Callout: Find out more about Kedro
+
+
+
