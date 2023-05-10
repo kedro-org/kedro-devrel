@@ -1,16 +1,14 @@
-# Title TBD. Maybe "Seven steps to deploy Kedro pipelines on AWS EMR" ??
-
-## Introduction
+# Seven steps to deploy Kedro pipelines on Amazon EMR
 
 
-[Amazon EMR](https://aws.amazon.com/emr/) (previously called Amazon Elastic MapReduce) is a managed cluster platform that simplifies running big data frameworks, such as Apache Hadoop and Apache Spark, to process and analyze vast amounts of data with AWS.
+[Amazon EMR](https://aws.amazon.com/emr/) (previously called Amazon Elastic MapReduce) is a managed cluster platform for applications built using open source big data frameworks, such as Apache Spark, that process and analyze vast amounts of data with AWS. This post explains how to launch an Amazon EMR cluster and deploy a Kedro project to run a Spark job.
 
-> TO DO 
-This section needs another sentence or two to set the scene on a typical use case of getting Kedro working with EMR.
+CALLOUT: What is Kedro?
 
-## 1. Set up the cluster environment
 
-One way to install Python libraries onto EMR is to package a virtual environment and deploy it to EMR. To do this, the cluster needs to have the [same Amazon Linux 2 environment as used by EMR](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide).
+## 1. Set up the Amazon EMR cluster
+
+One way to install Python libraries onto Amazon EMR is to package a virtual environment and deploy it. To do this, the cluster needs to have the [same Amazon Linux 2 environment as used by Amazon EMR](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide).
 
 We used this [example Dockerfile](https://github.com/aws-samples/emr-serverless-samples/tree/main/examples/pyspark/dependencies) to package our dependencies on an Amazon Linux 2 base. Our example Dockerfile is as below: 
 
@@ -66,9 +64,9 @@ As `conf` directory is not packaged together with `kedro package`, the `conf` di
 
 ## 3. Package the Kedro project
 
-Package the project using `kedro package`  command. This will create a `.egg` in the `dist`  folder. 
+Package the project using `kedro package`  command. This will create a `.whl` in the `dist`  folder. 
 
-This will be used when doing `spark-submit` to the EMR cluster for specifying the `--py-files` to refer to the source code. 
+This will be used when doing `spark-submit` to the Amazon EMR cluster for specifying the `--py-files` to refer to the source code. 
 
 ```bash
 # run at the root directory 
@@ -80,15 +78,15 @@ kedro package
 The `kedro package` command only packs the source code and yet the `conf/` directory is essential for running any Kedro project.
 
 Therefore it needs to be deployed separately as a `tar.gz`  file. It is important to note that the contents inside the `conf` directory needs
-to be zipped and **not** the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory and generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory .
+to be zipped and **not** the `conf`  folder entirely. Use the following command to zip the contents inside the conf directory and generate a `conf.tar.gz` file containing all the `catalog.yml`, `parameters.yml` and others for running the Kedro pipeline. It will be used with `spark-submit` for the `--archives` option for unpacking the contents into a `conf` directory.
 
 ```bash
 tar -czvf conf.tar.gz --exclude="local" conf/*
 ```
 
-## 5. Create entrypoint For Spark application 
+## 5. Create an entrypoint for the Spark application 
 
-Create an `entrypoint.py` file that the Spark Application will use to start the job. 
+Create an `entrypoint.py` file that the Spark application will use to start the job. 
 
 Example below:
 
@@ -107,31 +105,37 @@ import sys
 from proj_name.__main__ import main: 
 
 if __name__ == "__main__":
-# params = [ 
-# "--pipeline", 
-# "my_new_pipeline", 
-# "--runner", 
-# "ThreadRunner", 
-# "--params", 
-# "run_date:2023-02-05,runtime:cloud", 
-# ] 
-# main(params) 
+	"""
+	These params could be used as *args to 
+	test pipelines locally. The example below 
+	will run `my_new_pipeline` using `ThreadRunner`
+	applying a set of params
+	params = [ 
+		"--pipeline", 
+		"my_new_pipeline", 
+		"--runner", 
+		"ThreadRunner", 
+		"--params", 
+		"run_date:2023-02-05,runtime:cloud", 
+	] 
+	main(params) 
+	"""
 
-main(sys.argv)
+	main(sys.argv)
 ```
 
 # 6. Upload relevant files to S3
 
-Upload the relevant files to an S3 bucket (EMR should have access to this bucket), in order to run the Spark Job. The following artifacts should be uploaded to S3:
+Upload the relevant files to an S3 bucket (Amazon EMR should have access to this bucket), in order to run the Spark Job. The following artifacts should be uploaded to S3:
 
--   .egg [file created in step #3]
+-   .whl [file created in step #3]
 -   Virtual Environment `.tar.gz` created in step 1 (e.g. `pyspark_deps.tar.gz`)
 -   `tar` file for `conf` folder created in step #4 (e.g. `conf.tar.gz`)
 -   `entrypoint.py` file created in step #5.
 
-# 7. Spark submit to EMR cluster
+# 7. `spark-submit` to the Amazon EMR cluster
 
-Use the following `spark-submit` command as a `step` on EMR running in **cluster** mode. Few points to note:
+Use the following `spark-submit` command as a `step` on Amazon EMR running in **cluster** mode. Few points to note:
 
 -   `pyspark_deps.tar.gz`  is unpacked into a folder named `environment`
 -   Environment variables are set referring to libraries unpacked in the `environment` directory above. e.g. `PYSPARK_PYTHON=environment/bin/python`
@@ -144,19 +148,31 @@ Use the following `spark-submit` command as a `step` on EMR running in **cluster
 spark-submit 
     --deploy-mode cluster 
     --master yarn 
-    --conf spark.submit.pyFiles=s3://{S3_BUCKET}/<egg-file>.egg
+    --conf spark.submit.pyFiles=s3://{S3_BUCKET}/<whl-file>.whl
     --archives=s3://{S3_BUCKET}/pyspark_deps.tar.gz#environment,s3://{S3_BUCKET}/conf.tar.gz#conf
     --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON=environment/bin/python
     --conf spark.executorEnv.PYSPARK_PYTHON=environment/bin/python 
     --conf spark.yarn.appMasterEnv.<env-var-here>={ENV} 
     --conf spark.executorEnv.<env-var-here>={ENV} 
     
-    s3://{S3_BUCKET}/run.py --env base --pipeline my_new_pipeline --params run_date:2023-03-07,runtime:cloud
+    s3://{S3_BUCKET}/run.py --env base --pipeline my_new_pipeline --params run_date:2023-03-07,runtime:cloud      
 ```
 
 ## Summary
 
-> TO DO
-Need to close off this post with a summary of what the steps were and the result, and confirm how you know it's working perhaps??
+This post describes the sequence of steps needed to deploy a Kedro project to an Amazon EMR cluster.
 
-Also add a note on who to contact for more help (probably get on the Slack organisation)
+1. Set up the Amazon EMR cluster
+2. Set up `CONF_ROOT`
+3. Package the Kedro project
+4. Create `.tar` for `conf`
+5. Create entrypoint For Spark application 
+6. Upload relevant files to S3
+7. `spark-submit` to the Amazon EMR cluster
+
+Kedro supports a range of deployment targets including Amazon SageMaker, Databricks, Vertex AI and Azure ML, and our documentation additionally includes a range of approaches for single-machine deployment to a production server.
+
+Callout: Find out more about Kedro
+
+
+
