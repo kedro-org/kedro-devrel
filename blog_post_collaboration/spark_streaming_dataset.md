@@ -169,20 +169,6 @@ int.new_inventory:
      header: True
 ```
 
-### Example 2: Reading streaming data from a Kafka topic
-
-All parameters with respect to Kafka such as server address, topic to be subscribed, offsets and all can be given in the `load_args` key.
-
-```yaml
-raw_kafka:
-   type: spark.SparkStreamingDataSet
-   file_format: kafka
-   load_args:
-      kafka.bootstrap.servers: localhost:9092 # kafka bootstrap server
-      subscribe: example-topic # kafka topic
-      startingOffsets: latest
-```
-
 ## How to write data to streaming sinks
 
 ### Example 1: Writing into a csv sink
@@ -198,19 +184,6 @@ processed.sensor:
      output_mode: append
      checkpoint: data/04_checkpoint/processed_sensor
      header: True
-```
-
-### Example 2: Writing into a kafka topic
-
-```yaml
-enriched.sensor:
-   type: spark.SparkStreamingDataSet
-   file_format: kafka
-   save_args:
-     output_mode: append
-     checkpoint: data/04_checkpoint/sensor_processed_kafka
-     kafka.bootstrap.servers: localhost:9092
-     topic: example-sink
 ```
 
 Note that when you use the Kafka format, the respective packages should be added to the `spark.yml` configuration as follows:
