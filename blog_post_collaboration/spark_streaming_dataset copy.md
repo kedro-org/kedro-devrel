@@ -1,58 +1,55 @@
 # A new Kedro dataset for Spark Structured Streaming
 
-This article guides data practitioners on how to set up a Kedro project to integrate Spark Structured Streaming and process data streams in realtime. 
+This article describes a new [Kedro dataset for Spark Structured Streaming](https://github.com/kedro-org/kedro-plugins/tree/main/kedro-datasets/kedro_datasets/spark). [Spark Structured Streaming](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html) is built on the Spark SQL engine. You can express your streaming computation the same way you would express a batch computation on static data, and the Spark SQL engine will run it incrementally and continuously and update the final result as streaming data continues to arrive. 
 
-It provides details on the setup of the project to use the new `SparkStreaming` Kedro dataset, example use cases, and a deep-dive on some design considerations.
-It's meant for practitioners familiar with Kedro so we'll not be covering the basics of a project, but you can familiarise yourself with them in the [Kedro documentation](https://docs.kedro.org/en/stable/get_started/install.html).
+## Introduction
 
+This needs to be written:
+* What this post solves for the reader, and who would be interested in learning about this.
 
-## What is Kedro?
+This post is to guide data practitioners on how to use streaming datasets with Kedro. There are currently some limitations because it is not yet ready for use with a service broker, e.g. Kafka, as an additional JAR package is required.
 
-[Kedro](https://kedro.org) is a toolbox for production-ready data science. It's an open-source Python framework that enables the development of clean data science code, borrowing concepts from software engineering and applying them to machine-learning projects. A Kedro project provides scaffolding for complex data and machine-learning pipelines. It enables developers to spend less time on tedious "plumbing" and focus on solving new problems.
+* Limitations of the dataset (if any). Proof of concept only??
+* Link to source code and further information about Kedro datasets.
+* What the following sections show: set up a project, configure the data catalog
 
-### What are Kedro datasets?
+## Set up a project to use the `SparkStreaming` Kedro dataset
 
-[Kedro datasets](https://docs.kedro.org/en/stable/data/data_catalog.html) are abstractions for reading and loading data, designed to decouple these operations from your business logic. These datasets manage reading and writing data from a variety of sources, while also ensuring consistency, tracking, and versioning. They allow users to maintain focus on core data processing, leaving data I/O tasks to Kedro.
+These are the steps to follow in order to use the dataset:
 
-## What is Spark Structured Streaming?
-[Spark Structured Streaming](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html) is built on the Spark SQL engine. You can express your streaming computation the same way you would express a batch computation on static data, and the Spark SQL engine will run it incrementally and continuously and update the final result as streaming data continues to arrive. 
+The methodology for integrating Kedro with Spark streaming for real-time processing of data streams involves the following steps:
 
-## Integrating Kedro and Spark Structured Streaming
+1. Create a Kedro project using the `pyspark` starter
+2. Extend the template project
+3. Register the necessary PySpark and streaming related Hooks
+4. Configure the custom dataset in the catalog.yml file, defining the streaming sources and sinks.
+5. Use Kedro’s MemoryDataSet to store intermediate dataframes generated during the Spark streaming process.
 
-To enable Kedro to work with Spark Structured Streaming, a team inside [QuantumBlack Labs](https://www.mckinsey.com/capabilities/quantumblack/labs) developed a new [Spark Streaming Dataset](https://docs.kedro.org/en/stable/kedro_datasets.spark.SparkStreamingDataSet.html), as the existing Kedro Spark dataset was not compatible with Spark Streaming use cases. To ensure seamless streaming, the new dataset has a checkpoint location specification to avoid data duplication in streaming use cases and it uses `.start()` at the end of the `_save` method to initiate the stream.
+By defining the sources and sinks in the catalog.yml file and using the MemoryDataSet, Kedro creates a structured data pipeline that can read and write data streams with Spark streaming. This allows for efficient processing of data streams in real-time.
 
-
-## Set up a project to integrate Kedro with Spark Structured streaming
-
-The project uses a Kedro dataset to build a structured data pipeline that can read and write data streams with Spark Structured Streaming and process data streams in realtime. You need to add two separate Hooks to the Kedro project to enable it to function as a streaming application. 
-
-Integration involves the following steps:
-
-1. Create a Kedro project.
-2. Register the necessary PySpark and streaming related Hooks.
-3. Configure the custom dataset in the `catalog.yml` file, defining the streaming sources and sinks. 
-4. Use Kedro’s new [dataset for Spark Structured Streaming](https://github.com/kedro-org/kedro-plugins/tree/main/kedro-datasets/kedro_datasets/spark) to store intermediate dataframes generated during the Spark streaming process.
 
 ### Create a Kedro project
 
-Ensure you have installed a version of Kedro greater than 0.18.9 and `kedro-datasets` greater than 1.4.0.
+We assume a [working Kedro setup](https://docs.kedro.org/en/stable/get_started/install.html) with a version of Kedro > 0.18.9. You should also install `kedro-datasets` version 1.4.0 or above.
 
 ```bash
-pip install kedro==0.18 kedro-datasets~=1.4.0
+pip install “kedro-datasets==1.4.0”
 ```
 
-Create a new Kedro project using the Kedro `pyspark` starter: 
+Next, create a Kedro project using the Kedro `pyspark` starter: 
 
 ```bash
 kedro new --starter=pyspark`
 ```
 
-### Register the necessary PySpark and streaming related Hooks
-
-To work with multiple streaming nodes, two hooks are required. The first is for integrating Pyspark: see [Build a Kedro pipeline with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) for details. You will also need a Hook for running a streaming query without termination unless an exception occurs.
-
+### Add Hooks code
 Add the following code to `src/$your_kedro_project_name/hooks.py`:
 
+
+To work with multiple streaming nodes, two hooks are required for:
+
+* Integrating Pyspark. See [Build a Kedro pipeline with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) for details.
+* Running a streaming query without termination unless an exception occurs.
 
 ```python
 src/$your_kedro_project_name/hooks.py
@@ -149,11 +146,11 @@ Register the Hooks in `src/$your_kedro_project_name/settings.py`:
 ```
 
 
-## How to set up your Kedro project to read data from streaming sources
+## How to read data from streaming sources
 
-Once you have set up your project, you can use the new [Kedro Spark streaming dataset](https://docs.kedro.org/en/stable/kedro_datasets.spark.SparkStreamingDataSet.html). You need to configure the data catalog, in `conf/base/catalog.yml` as follows:
+Once you have set up your project, you can use the new [Kedro Spark streaming dataset](https://github.com/kedro-org/kedro-plugins/tree/main/kedro-datasets/kedro_datasets/spark). You need to configure them in the data catalog, as the following examples illustrate:
 
-### Reading a streaming JSON file
+### Example 1: Reading streaming JSON file
 
 ```yaml
 raw_json:
@@ -173,7 +170,9 @@ int.new_inventory:
      header: True
 ```
 
-## How to set up your Kedro project to write data to streaming sinks
+## How to write data to streaming sinks
+
+### Example 1: Writing into a csv sink
 
 All the additional arguments can be kept under the `save_args` key:
 
@@ -193,26 +192,32 @@ Note that when you use the Kafka format, the respective packages should be added
 ```yaml
 spark.jars.packages: org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.1 
 ```
+
+
+    
     
 ## Design considerations
 ### Pipeline design
 
-In order to benefit from Spark's internal query optimisation, we recommend that any interim datasets are stored as memory datasets.
+- In order to benefit from Spark's internal query optimisation, we recommend that any interim datasets are stored as memory datasets
 
-All streams start at the same time, so any nodes that have a dependency on another node that writes to a file sink (i.e. the input to that node is the output of another node) will fail on the first run. This is because there are no files in the file sink for the stream to process when it starts. 
+- As all streams start at the same time, nodes that have a dependency on another node that writes to a file sink - i.e. the output of one node is the input to another node - will fail on the first run as there isn't any files in the file sink for the stream to process when it is started. It is recommended to either:
+    - keep intermediate datasets in memory
+    - split out the processing into two pipelines and start by triggering the first pipeline to build up some initial history
 
-We recommended that you either keep intermediate datasets in memory or split out the processing into two pipelines and start by triggering the first pipeline to build up some initial history.
 
 ### Feature creation
 
-Be aware that windowing operations only allow windowing on time columns.
-
-Watermarks must be defined for joins. Only certain types of joins are allowed, and these depend on the file types (stream-stream, stream-static) which makes joining of multiple tables a little complex at times. For further information or advice......TO DO.
+- Windowing operations only allow windowing on time columns
+- Watermarks must be defined for joins
+- Only certain types of joins are allowed depending on the file types (stream-stream, stream-static) which makes joining of multiple tables a little complex at times
 
 
 ## Logging
 
-When initiated, the Kedro pipeline will download the JAR required for the Spark Kafka. After the first run, it won't download the file again but simply retrieve it from where the previously downloaded file was stored.
+
+When initiated the Kedro pipeline will download the JAR required for the Spark Kafka.
+After the first run, it won't download the file again but simply retrieve it from where the previously downloaded file was stored.
 
 ```
     :: loading settings :: url = jar:file:/usr/local/Cellar/apache-spark/3.3.2/libexec/jars/ivy-2.5.1.jar!/org/apache/ivy/core/settings/ivysettings.xml
@@ -258,7 +263,11 @@ When initiated, the Kedro pipeline will download the JAR required for the Spark 
     0 artifacts copied, 12 already retrieved (0kB/11ms)
 ```
 
-For each node, the logs for the following will be shown: Loading data, Running nodes, Saving data, Completed x out of y tasks.
+For each node, the following logs will be shown:
+- Loading data
+- Running node
+- Saving data
+- Completed x out of y tasks
 
 The completed log doesn't mean that the stream processing in that node has stopped. It means that the Spark plan has been created, and if the output dataset is being saved to a sink, the stream has started.
 
@@ -314,9 +323,23 @@ java.lang.Thread.run(Thread.java:750)
 ```
 
 
+
+
 ## In summary
 
-In this article, we explained how to use a new Kedro dataset to create streaming pipelines. We created a new Kedro project using the Kedro `pyspark` starter and added two separate Hooks to the Kedro project to enable it to function as a streaming application, then configured the Kedro data catalog to use the new dataset, defining the streaming sources and sinks.
+To enable Kedro to work with Spark Structured Streaming, we developed a new Spark Streaming Dataset, as the existing Kedro Spark dataset was not compatible with Spark Streaming use cases. The new dataset was equipped with the following features to ensure seamless streaming:
 
-There are currently some limitations because it is not yet ready for use with a service broker, e.g. Kafka, as an additional JAR package is required.
+* A checkpoint location specification to avoid data duplication in streaming use cases.
+* The use of `.start()` at the end of the `_save` method to initiate the stream.
+
+Separate Hooks were added to the Kedro project to enable it to function as a streaming application. 
+
+Takeaways for the reader:
+
+* Kedro is easily extensible and you can do cool stuff as this team demonstrates with Spark Streaming integration
+
+
+When working with Spark, being able to deploy a streaming application is predicated on being able to deploy a job to a cluster. This is now possible with Kedro, as described in https://kedro.org/blog/how-to-deploy-kedro-pipelines-on-amazon-emr, where we mentioned how to deploy kedro pipeline with the same configuration--yarn cluster mode using spark-submit, to another application cluster.
+
+In order to run spark streaming with the production workflow, as long as we can deploy a job to a cluster with proper scheduler, it should work, an client project example was we used streaming on Databrick clusters. (LINK?)
 
