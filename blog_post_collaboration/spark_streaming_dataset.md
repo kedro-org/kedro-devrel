@@ -5,6 +5,7 @@ This article guides data practitioners on how to set up a Kedro project to integ
 It provides details on the setup of the project to use the new `SparkStreaming` Kedro dataset, example use cases, and a deep-dive on some design considerations.
 It's meant for practitioners familiar with Kedro so we'll not be covering the basics of a project, but you can familiarise yourself with them in the [Kedro documentation](https://docs.kedro.org/en/stable/get_started/install.html).
 
+This post was created by [Tingting Wan](https://github.com/tingtingQB), [Tom Kurian](https://github.com/kuriantom369), and [Haris Michailidis](https://github.com/harisqb), Data Engineers in the London office of QuantumBlack, AI by McKinsey.
 
 ## What is Kedro?
 
