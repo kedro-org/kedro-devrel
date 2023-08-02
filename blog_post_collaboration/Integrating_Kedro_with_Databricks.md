@@ -25,28 +25,25 @@ Spark commands are sent and executed on the cluster, and results are returned to
 
 In the context of Kedro, this has an amazing effect: As long as you don’t explicitly ask for the data to be collected in your local environment, operations will be executed only when saving the outputs of your node. If you use datasets saved to a Databricks path, there will be no performance hit for transferring data between environments. 
 
-This tool was recently made available as a thin client for Spark Connect, one of the highlights of Spark 3.4, and configuration was made easier than earlier versions. If your cluster doesn’t support the current Connect, please refer to the documentation - Previous versions had different limitations.
+This tool was recently made available as a thin client for [Spark Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html), one of the highlights of Spark 3.4, and configuration was made easier than earlier versions. If your cluster doesn’t support the current Connect, please refer to the [documentation](https://docs.databricks.com/en/dev-tools/databricks-connect-legacy.html) - Previous versions had different limitations.
 
-TO DO: PLEASE COULD YOU PROVIDE LINKS ABOUT THE THIN CLIENT AND THE DOCUMENTATION YOU MENTION IN THE PARAGRAPH ABOVE.
- 
- 
+ [Check this video from the Databricks team for a through introduction to Spark Connect](https://www.youtube.com/watch?v=p9IRFSjuLBE)
  
 ## How can I use a Databricks Connect workflow with Kedro?
-Databricks Connect enables us to have a completely local development flow, while all artifacts can be remote objects. Using Delta tables for all our datasets and MLflow for model objects and tracking, nothing needs to be saved locally.
+Databricks Connect (and Spark Connect) enables us to have a completely local development flow, while all artifacts can be remote objects. Using Delta tables for all our datasets and MLflow for model objects and tracking, nothing needs to be saved locally.
 Developers can take full advantage of the Databricks stack while maintaining their full IDE usage.
 
-WE PROBABLY NEED A BIT MORE HERE TO ANSWER THE "HOW" SUCH AS A LINK TO AN EXAMPLE, OR AN EXAMPLE OR VIDEO EMBED
- 
+
 ## How to use Databricks as your PySpark engine
-[Kedro supports integration with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) through the use of Hooks. To configure and enable your Databricks session, simply setup your `SPARK_REMOTE` environment variable and substitute the common Spark hook for the DatabricksSession. Here is an example implementation:
+[Kedro supports integration with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) through the use of Hooks. To configure and enable your Databricks session through Spark Connect, simply setup your `SPARK_REMOTE` environment variable with your Databricks configuration. Here is an example implementation:
  
 ``` 
 import os
 from pathlib import Path
- 
-from databricks.connect import DatabricksSession
+
 from kedro.framework.hooks import hook_impl
- 
+from pyspark.sql import SparkSession
+
 class SparkHooks:
     @hook_impl
     def after_context_created(self) -> None:
@@ -54,53 +51,68 @@ class SparkHooks:
         from Databricks.
         """
         set_databricks_creds()
-        _spark_session = DatabricksSession.builder.getOrCreate()
- 
+        _spark_session = SparkSession.Builder().getOrCreate()
+
+
 def set_databricks_creds():
     """
-    Pass databricks credentials as OS variables. Reading the DEFAULT in databrickscfg.
+    Pass databricks credentials as OS variables if using the local machine. 
+    If you set DATABRICKS_PROFILE env variable, it will choose the desired profile on .databrickscfg,
+    otherwise it will use the DEFAULT profile in databrickscfg.
     """
-    with open(Path.home() / ".databrickscfg") as f:
-        lines = f.readlines()
- 
-    idx = 0
-    default_idx = 0
-    default_found = False
-    for line in lines:
-        idx = idx + 1
-        if "[DEFAULT]" in line:
-            default_idx = idx
-            default_found = True
-        elif "[" in line:
-            if default_found == False:
-                continue
-            break
- 
-    out = "".join(lines[default_idx:idx]).split("\n")
-    for line in out:
-        if "host" in line:
-            host = line.split("=", 1)[1].split("//", 1)[1].strip()[:-1]
-        if "cluster_id" in line:
-            cluster_id = line.split("=", 1)[1].strip()
-        if "token" in line:
-            token = line.split("=", 1)[1].strip()
- 
-    os.environ[
-        "SPARK_REMOTE"
-    ] = f"sc://{host}:443/;token={token};x-databricks-cluster-id={cluster_id}"
+    DEFAULT = os.getenv("DATABRICKS_PROFILE", "DEFAULT")
+    if os.getenv("SPARK_HOME") != '/databricks/spark':
+        with open(Path.home() / ".databrickscfg") as f:
+            lines = f.readlines()
+
+        idx = 0
+        default_idx = 0
+        default_found = False
+        for line in lines:
+            idx = idx + 1
+            if f"[{DEFAULT}]" in line:
+                default_idx = idx
+                default_found = True
+            elif "[" in line:
+                if default_found == False:
+                    continue
+                break
+
+
+        out = "".join(lines[default_idx:idx]).split("\n")
+        for line in out:
+            if "host" in line:
+                host = line.split("=", 1)[1].split("//", 1)[1].strip()[:-1]
+            if "cluster_id" in line:
+                cluster_id = line.split("=", 1)[1].strip()
+            if "token" in line:
+                token = line.split("=", 1)[1].strip()
+
+        os.environ[
+            "SPARK_REMOTE"
+        ] = f"sc://{host}:443/;token={token};x-databricks-cluster-id={cluster_id}"
  
 ``` 
- 
-Notice that Databricks Connect and Spark Connect don’t support SparkContext, so we don’t set it up. We also don’t need to setup a `spark.yml` file as is common in other PySpark templates; we’re not passing any configuration, just using the cluster that is in Databricks. We also don’t need to load any extra Spark files (e.g. JARs), as the tool is a thin Spark Connect client.
- 
-For best usage of Databricks, use ` kedro_datasets.databricks.ManagedTableDataSet` as your dataset type in the catalog. 
 
-WE NEED A LINK OR A BIT MORE OF AN EXAMPLE HERE 
+This example will populate SPARK_REMOTE with your local databrickscfg file. We do't setup the remote connection if the project is being run from inside Databricks (if SPARK_HOME points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
+Notice that we don’t need to setup a `spark.yml` file as is common in other PySpark templates; we’re not passing any configuration, just using the cluster that is in Databricks. We also don’t need to load any extra Spark files (e.g. JARs), as we are using a thin Spark Connect client.
+ 
+Now all your Spark calls in your pipelines will automatically use the remote cluster. There's no need to change anything in your code. However, notebooks might be part of the project. To use your remote cluster without needing to use environment variables, you can use the DatabricksSession:
+```
+from databricks.connect import DatabricksSession
+ 
+spark = DatabricksSession.builder.getOrCreate()
+```
+This will read your configuration directly from the `databrickscfg` file, bypassing the setup needed for pure Spark Connect.
+
+When using the remote cluster, it's preferred to avoid data transfers between the environments, with all catalog entries referencing remote locations. Using ` kedro_datasets.databricks.ManagedTableDataSet` as your dataset type in the catalog also allows you use Delta table features.
+
+
  
 ## Enabling MLFlow on Databricks
-Using [MLflow](https://mlflow.org/) to save all your artifacts directly to Databricks leads to a powerful workflow. For this we can use [`kedro-mlflow`](https://github.com/Galileo-Galilei/kedro-mlflow). Note that `kedro-mlflow` is built on top of the mlflow library and although the databricks config cannot be found in its documentation, you can read more about it in the documentation from mlflow directly. (LINK HERE)
+Using [MLflow](https://mlflow.org/) to save all your artifacts directly to Databricks leads to a powerful workflow. For this we can use [`kedro-mlflow`](https://github.com/Galileo-Galilei/kedro-mlflow). Note that `kedro-mlflow` is built on top of the mlflow library and although the databricks config cannot be found in its documentation, you can read more about it in the [documentation from mlflow directly](https://mlflow.org/docs/latest/index.html).
 
-After doing the basic setup of the library in your project, (LINK) you should see a `mlflow.yml` configuration file. In this file, change the following to set up your URI:
+After doing the [basic setup of the library](https://kedro-mlflow.readthedocs.io/en/stable/source/02_installation/02_setup.html#activate-kedro-mlflow-in-your-kedro-project) in your project, you should see a `mlflow.yml` configuration file. In this file, change the following to set up your URI:
 
 ```
 server:
@@ -119,4 +131,4 @@ By default, all your parameters will be logged, and objects such as models and m
 ## Limitations of the workflow
 The new Databricks Connect tool (built on top of Spark Connect) supports only recent versions of Spark. We recommend looking at the [detailed limitations on the official website](https://docs.databricks.com/dev-tools/databricks-connect-ref.html), and in common usage you need to be careful about the upload limit of only 128MB for dataframes. 
  
-Users also need to be conscious that `.toPandas()` will move the data to your local pandas environment.  Saving results back as MLflow objects is the preferred way to avoid local objects. LINK OR CODE TO ILLUSTRATE?
+Users also need to be conscious that `.toPandas()` will move the data to your local pandas environment.  Saving results back as MLflow objects is the preferred way to avoid local objects. Examples can be seen in the [kedro-mlflow documentation](https://kedro-mlflow.readthedocs.io/en/stable/source/04_experimentation_tracking/index.html) for all types of supported objects.
