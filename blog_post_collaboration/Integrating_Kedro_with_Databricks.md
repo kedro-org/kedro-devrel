@@ -36,7 +36,8 @@ Developers can take full advantage of the Databricks stack while maintaining the
 
 
 ## How to use Databricks as your PySpark engine
-[Kedro supports integration with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) through the use of Hooks. To configure and enable your Databricks session through Spark Connect, simply setup your `SPARK_REMOTE` environment variable with your Databricks configuration. Here is an example implementation:
+[Kedro supports integration with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) through the use of Hooks. To configure and enable your Databricks session through Spark Connect, simply set up your `SPARK_REMOTE` environment variable with your Databricks configuration. Here is an example implementation:
+
  
 ``` 
 import os
