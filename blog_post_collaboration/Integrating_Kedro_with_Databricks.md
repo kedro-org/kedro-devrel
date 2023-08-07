@@ -27,7 +27,8 @@ In the context of Kedro, this has an amazing effect: As long as you don’t expl
 
 This tool was recently made available as a thin client for [Spark Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html), one of the highlights of Spark 3.4, and configuration was made easier than earlier versions. If your cluster doesn’t support the current Connect, please refer to the [documentation](https://docs.databricks.com/en/dev-tools/databricks-connect-legacy.html) - Previous versions had different limitations.
 
- [Check this video from the Databricks team for a through introduction to Spark Connect](https://www.youtube.com/watch?v=p9IRFSjuLBE)
+ [Check this video from the Databricks team for a thorough introduction to Spark Connect](https://www.youtube.com/watch?v=p9IRFSjuLBE)
+
  
 ## How can I use a Databricks Connect workflow with Kedro?
 Databricks Connect (and Spark Connect) enables us to have a completely local development flow, while all artifacts can be remote objects. Using Delta tables for all our datasets and MLflow for model objects and tracking, nothing needs to be saved locally.
