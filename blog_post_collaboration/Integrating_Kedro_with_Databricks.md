@@ -6,7 +6,7 @@ In recent months we've updated Kedro documentation to illustrate [three differen
 * For faster iteration on changes, the workflow documented in ["Use a Databricks workspace to develop a Kedro project"](https://docs.kedro.org/en/stable/deployment/databricks/databricks_notebooks_development_workflow.html) is for those who prefer to develop and test their projects directly within Databricks notebooks, to avoid the overhead of setting up and syncing a local development environment with Databricks. 
 * Alternatively, you can work locally in an IDE as described by the workflow documented in ["Use an IDE, dbx and Databricks Repos to develop a Kedro project"](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html). This is ideal if you’re in the early stages of learning Kedro, or your project requires constant testing and adjustments since you can use your IDE’s capabilities for faster, error-free development, while testing on Databricks. However, the experience is still not ideal: you must sync your work inside Databricks with dbx and run the pipeline inside a notebook. Debugging has a long setup for each change and there is less flexibility than inside an IDE. 
 
-If you need a Databricks development experience that works completely inside an IDE, we recommend Databricks Connect. 
+If you need a Databricks development experience that works completely inside an IDE, we recommend Databricks Connect. This setup is recommended if the data-heavy parts of your pipelines are in PySpark, to minimize performance drops due to the data traveling between remote and local environments.
  
 ## What is Databricks Connect?
 [Databricks Connect](https://docs.databricks.com/dev-tools/databricks-connect-ref.html) is Databricks' official method of interacting with a remote Databricks instance while using a local environment.
@@ -40,11 +40,13 @@ Developers can take full advantage of the Databricks stack while maintaining the
 
  
 ``` 
+import configparser
 import os
 from pathlib import Path
 
 from kedro.framework.hooks import hook_impl
 from pyspark.sql import SparkSession
+
 
 class SparkHooks:
     @hook_impl
@@ -58,42 +60,24 @@ class SparkHooks:
 
 def set_databricks_creds():
     """
-    Pass databricks credentials as OS variables if using the local machine. 
+    Pass databricks credentials as OS variables if using the local machine.
     If you set DATABRICKS_PROFILE env variable, it will choose the desired profile on .databrickscfg,
     otherwise it will use the DEFAULT profile in databrickscfg.
     """
     DEFAULT = os.getenv("DATABRICKS_PROFILE", "DEFAULT")
-    if os.getenv("SPARK_HOME") != '/databricks/spark':
-        with open(Path.home() / ".databrickscfg") as f:
-            lines = f.readlines()
+    if os.getenv("SPARK_HOME") != "/databricks/spark":
+        config = configparser.ConfigParser()
+        config.read(Path.home() / ".databrickscfg")
 
-        idx = 0
-        default_idx = 0
-        default_found = False
-        for line in lines:
-            idx = idx + 1
-            if f"[{DEFAULT}]" in line:
-                default_idx = idx
-                default_found = True
-            elif "[" in line:
-                if default_found == False:
-                    continue
-                break
-
-
-        out = "".join(lines[default_idx:idx]).split("\n")
-        for line in out:
-            if "host" in line:
-                host = line.split("=", 1)[1].split("//", 1)[1].strip()[:-1]
-            if "cluster_id" in line:
-                cluster_id = line.split("=", 1)[1].strip()
-            if "token" in line:
-                token = line.split("=", 1)[1].strip()
+        host = (
+            config[DEFAULT]["host"].split("//", 1)[1].strip()[:-1]
+        )  # remove "https://" and final "/" from path
+        cluster_id = config[DEFAULT]["cluster_id"]
+        token = config[DEFAULT]["token"]
 
         os.environ[
             "SPARK_REMOTE"
         ] = f"sc://{host}:443/;token={token};x-databricks-cluster-id={cluster_id}"
- 
 ``` 
 
 This example will populate SPARK_REMOTE with your local databrickscfg file. We do't setup the remote connection if the project is being run from inside Databricks (if SPARK_HOME points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
