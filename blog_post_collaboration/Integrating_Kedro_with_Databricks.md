@@ -39,7 +39,8 @@ Developers can take full advantage of the Databricks stack while maintaining the
 [Kedro supports integration with PySpark](https://docs.kedro.org/en/stable/integrations/pyspark_integration.html) through the use of Hooks. To configure and enable your Databricks session through Spark Connect, simply set up your `SPARK_REMOTE` environment variable with your Databricks configuration. Here is an example implementation:
 
  
-``` 
+``` python
+
 import configparser
 import os
 from pathlib import Path
@@ -80,8 +81,9 @@ def set_databricks_creds():
         ] = f"sc://{host}:443/;token={token};x-databricks-cluster-id={cluster_id}"
 ``` 
 
-This example will populate SPARK_REMOTE with your local databrickscfg file. You don't setup the remote connection if the project is being run from inside Databricks (if SPARK_HOME points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
-Notice that you don’t need to setup a `spark.yml` file as is common in other PySpark templates; we’re not passing any configuration, just using the cluster that is in Databricks. You also don’t need to load any extra Spark files (e.g. JARs), as you are using a thin Spark Connect client.
+
+This example will populate `SPARK_REMOTE` with your local `databrickscfg file`. You don't setup the remote connection if the project is being run from inside Databricks (if `SPARK_HOME` points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
+Notice that you don’t need to setup a `spark.yml` file as is common in other PySpark templates; you’re not passing any configuration, just using the cluster that is in Databricks. You also don’t need to load any extra Spark files (e.g. JARs), as you are using a thin Spark Connect client.
  
 Now all your Spark calls in your pipelines will automatically use the remote cluster. There's no need to change anything in your code. However, notebooks might be part of the project. To use your remote cluster without needing to use environment variables, you can use the DatabricksSession:
 ```
