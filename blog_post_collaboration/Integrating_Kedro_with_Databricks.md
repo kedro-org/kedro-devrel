@@ -6,7 +6,7 @@ In recent months we've updated Kedro documentation to illustrate [three differen
 * For faster iteration on changes, the workflow documented in ["Use a Databricks workspace to develop a Kedro project"](https://docs.kedro.org/en/stable/deployment/databricks/databricks_notebooks_development_workflow.html) is for those who prefer to develop and test their projects directly within Databricks notebooks, to avoid the overhead of setting up and syncing a local development environment with Databricks. 
 * Alternatively, you can work locally in an IDE as described by the workflow documented in ["Use an IDE, dbx and Databricks Repos to develop a Kedro project"](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html). This is ideal if you’re in the early stages of learning Kedro, or your project requires constant testing and adjustments since you can use your IDE’s capabilities for faster, error-free development, while testing on Databricks. However, the experience is still not ideal: you must sync your work inside Databricks with dbx and run the pipeline inside a notebook. Debugging has a long setup for each change and there is less flexibility than inside an IDE. 
 
-If you need a Databricks development experience that works completely inside an IDE, we recommend Databricks Connect. This setup is recommended if the data-heavy parts of your pipelines are in PySpark, to minimize performance drops due to the data traveling between remote and local environments.
+In this blog post, Diego Lira, Specialist Data Scientist and a client-facing member of [QuantumBlack, AI by McKinsey](https://www.mckinsey.com/capabilities/quantumblack/how-we-help-clients) explains how to use Databricks Connect for a Databricks development experience that works completely inside an IDE. He recommends this as a solution where the data-heavy parts of your pipelines are in PySpark. If your workflow moves data into your local environment to compute you are likely to experience a performance hit along with potential issues of compliance assicated with moving data.
  
 ## What is Databricks Connect?
 [Databricks Connect](https://docs.databricks.com/dev-tools/databricks-connect-ref.html) is Databricks' official method of interacting with a remote Databricks instance while using a local environment.
@@ -27,7 +27,7 @@ In the context of Kedro, this has an amazing effect: As long as you don’t expl
 
 This tool was recently made available as a thin client for [Spark Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html), one of the highlights of Spark 3.4, and configuration was made easier than earlier versions. If your cluster doesn’t support the current Connect, please refer to the [documentation](https://docs.databricks.com/en/dev-tools/databricks-connect-legacy.html) - Previous versions had different limitations.
 
- [Check this video from the Databricks team for a thorough introduction to Spark Connect](https://www.youtube.com/watch?v=p9IRFSjuLBE)
+[Check this video from the Databricks team for a thorough introduction to Spark Connect](https://www.youtube.com/watch?v=p9IRFSjuLBE)
 
  
 ## How can I use a Databricks Connect workflow with Kedro?
@@ -80,8 +80,8 @@ def set_databricks_creds():
         ] = f"sc://{host}:443/;token={token};x-databricks-cluster-id={cluster_id}"
 ``` 
 
-This example will populate SPARK_REMOTE with your local databrickscfg file. We do't setup the remote connection if the project is being run from inside Databricks (if SPARK_HOME points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
-Notice that we don’t need to setup a `spark.yml` file as is common in other PySpark templates; we’re not passing any configuration, just using the cluster that is in Databricks. We also don’t need to load any extra Spark files (e.g. JARs), as we are using a thin Spark Connect client.
+This example will populate SPARK_REMOTE with your local databrickscfg file. You don't setup the remote connection if the project is being run from inside Databricks (if SPARK_HOME points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
+Notice that you don’t need to setup a `spark.yml` file as is common in other PySpark templates; we’re not passing any configuration, just using the cluster that is in Databricks. You also don’t need to load any extra Spark files (e.g. JARs), as you are using a thin Spark Connect client.
  
 Now all your Spark calls in your pipelines will automatically use the remote cluster. There's no need to change anything in your code. However, notebooks might be part of the project. To use your remote cluster without needing to use environment variables, you can use the DatabricksSession:
 ```
@@ -96,7 +96,7 @@ When using the remote cluster, it's preferred to avoid data transfers between th
 
  
 ## Enabling MLFlow on Databricks
-Using [MLflow](https://mlflow.org/) to save all your artifacts directly to Databricks leads to a powerful workflow. For this we can use [`kedro-mlflow`](https://github.com/Galileo-Galilei/kedro-mlflow). Note that `kedro-mlflow` is built on top of the mlflow library and although the databricks config cannot be found in its documentation, you can read more about it in the [documentation from mlflow directly](https://mlflow.org/docs/latest/index.html).
+Using [MLflow](https://mlflow.org/) to save all your artifacts directly to Databricks leads to a powerful workflow. For this you can use [`kedro-mlflow`](https://github.com/Galileo-Galilei/kedro-mlflow). Note that `kedro-mlflow` is built on top of the mlflow library and although the databricks config cannot be found in its documentation, you can read more about it in the [documentation from mlflow directly](https://mlflow.org/docs/latest/index.html).
 
 After doing the [basic setup of the library](https://kedro-mlflow.readthedocs.io/en/stable/source/02_installation/02_setup.html#activate-kedro-mlflow-in-your-kedro-project) in your project, you should see a `mlflow.yml` configuration file. In this file, change the following to set up your URI:
 
@@ -115,6 +115,6 @@ Setup your experiment name (this should be a valid Databricks path):
 By default, all your parameters will be logged, and objects such as models and metrics can be saved as MLflow objects referenced in the catalog.
  
 ## Limitations of the workflow
-The new Databricks Connect tool (built on top of Spark Connect) supports only recent versions of Spark. We recommend looking at the [detailed limitations on the official website](https://docs.databricks.com/dev-tools/databricks-connect-ref.html), and in common usage you need to be careful about the upload limit of only 128MB for dataframes. 
+[Databricks Connect](https://docs.databricks.com/dev-tools/databricks-connect-ref.html), built on top of Spark Connect, supports only recent versions of Spark. I recommend looking at the detailed limitations in the official documentation for specific guidance, such as the upload limit of only 128MB for dataframes. 
  
 Users also need to be conscious that `.toPandas()` will move the data to your local pandas environment.  Saving results back as MLflow objects is the preferred way to avoid local objects. Examples can be seen in the [kedro-mlflow documentation](https://kedro-mlflow.readthedocs.io/en/stable/source/04_experimentation_tracking/index.html) for all types of supported objects.
