@@ -80,7 +80,8 @@ def set_databricks_creds():
         ] = f"sc://{host}:443/;token={token};x-databricks-cluster-id={cluster_id}"
 ``` 
 
-This example will populate SPARK_REMOTE with your local databrickscfg file. We do't setup the remote connection if the project is being run from inside Databricks (if SPARK_HOME points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
+This example will populate `SPARK_REMOTE` with your local `databrickscfg` file. We do't setup the remote connection if the project is being run from inside Databricks (if `SPARK_HOME` points to Databricks), so you're still able to run it in the usual [hybrid development flow](https://docs.kedro.org/en/stable/deployment/databricks/databricks_ide_development_workflow.html).
+
 Notice that we don’t need to setup a `spark.yml` file as is common in other PySpark templates; we’re not passing any configuration, just using the cluster that is in Databricks. We also don’t need to load any extra Spark files (e.g. JARs), as we are using a thin Spark Connect client.
  
 Now all your Spark calls in your pipelines will automatically use the remote cluster. There's no need to change anything in your code. However, notebooks might be part of the project. To use your remote cluster without needing to use environment variables, you can use the DatabricksSession:
