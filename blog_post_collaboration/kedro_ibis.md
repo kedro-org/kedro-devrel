@@ -3,6 +3,7 @@
 In your Kedro journey, have you ever...
 
 * ...slurped up large amounts of data into memory, instead of pushing execution down to the source database/engine?
+* ...prototyped a node in pandas, and then rewritten it in PySpark/Snowpark/some other native dataframe API?
 * ...implemented a proof-of-concept solution in 3-4 months on data extracts, and then struggled massively when you needed to move to running against the production databases and scale out?
 * ...insisted on using Kedro across the full data engineering/data science workflow for consistency (fair enough), although dbt would have been the much better fit for non-ML pipelines, because you essentially needed a SQL workflow?
 
