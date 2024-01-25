@@ -190,6 +190,78 @@ select * from final
 
 </table>
 
+Ibis uses deferred execution, pushing code execution to the query engine and only moving required data into memory when necessary. For example, we can examine how Ibis represents the above node logic. At the run time, Ibis generates SQL instructions from `final`'s intermediate representation (IR), executing it at one time; no intermediate `order_payments` gets created. Note that the below code requires that the `stg_orders` and `stg_payments` datasets be materialized already.
+
+```python
+(kedro-jaffle-shop) deepyaman@Deepyamans-MacBook-Air jaffle-shop % kedro ipython
+ipython --ext kedro.ipython
+Python 3.11.5 (main, Sep 11 2023, 08:31:25) [Clang 14.0.6 ]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.18.1 -- An enhanced Interactive Python. Type '?' for help.
+[01/25/24 08:33:22] INFO     Resolved project path as: /Users/deepyaman/github/deepyaman/jaffle-shop.                                                                                            __init__.py:146
+                             To set a different path, run '%reload_kedro <project_root>'
+[01/25/24 08:33:22] INFO     Kedro project Jaffle Shop                                                                                                                                           __init__.py:115
+                    INFO     Defined global variable 'context', 'session', 'catalog' and 'pipelines'                                                                                             __init__.py:116
+[01/25/24 08:33:23] INFO     Registered line magic 'run_viz'                                                                                                                                     __init__.py:122
+
+In [1]: orders = catalog.load("stg_orders")
+[01/25/24 08:36:19] INFO     Loading data from stg_orders (TableDataset)...                                                                                                                  data_catalog.py:482
+
+In [2]: payments = catalog.load("stg_payments")
+[01/25/24 08:36:40] INFO     Loading data from stg_payments (TableDataset)...                                                                                                                data_catalog.py:482
+
+In [3]: payment_methods = catalog.load("params:payment_methods")
+[01/25/24 08:37:26] INFO     Loading data from params:payment_methods (MemoryDataset)...                                                                                                     data_catalog.py:482
+
+In [4]: from jaffle_shop.pipelines.data_processing.nodes import process_orders
+
+In [5]: final = process_orders(orders, payments, payment_methods)
+
+In [6]: final
+Out[6]:
+r0 := DatabaseTable: stg_orders
+  order_id    int64
+  customer_id int64
+  order_date  date
+  status      string
+
+r1 := DatabaseTable: stg_payments
+  payment_id     int64
+  order_id       int64
+  payment_method string
+  amount         float64
+
+r2 := Aggregation[r1]
+  metrics:
+    credit_card_amount:   Coalesce([Sum(r1.amount, where=r1.payment_method == 'credit_card'), 0])
+    coupon_amount:        Coalesce([Sum(r1.amount, where=r1.payment_method == 'coupon'), 0])
+    bank_transfer_amount: Coalesce([Sum(r1.amount, where=r1.payment_method == 'bank_transfer'), 0])
+    gift_card_amount:     Coalesce([Sum(r1.amount, where=r1.payment_method == 'gift_card'), 0])
+    total_amount:         Sum(r1.amount)
+  by:
+    order_id: r1.order_id
+
+r3 := LeftJoin[r0, r2] r0.order_id == r2.order_id
+
+Selection[r3]
+  selections:
+    order_id:             r0.order_id
+    customer_id:          r0.customer_id
+    order_date:           r0.order_date
+    status:               r0.status
+    credit_card_amount:   r2.credit_card_amount
+    coupon_amount:        r2.coupon_amount
+    bank_transfer_amount: r2.bank_transfer_amount
+    gift_card_amount:     r2.gift_card_amount
+    amount:               r2.total_amount
+
+In [7]: final.visualize()
+```
+
+In the final step, we draw a visual representation of the expression tree. If you're following along, this step requires the `graphviz` Python library be installed. In practice, we leave these complexities up to Ibis and the underlying engine!
+
+![tmpip_tmztu](https://github.com/kedro-org/kedro-devrel/assets/14007150/e149b55b-3dbb-4953-affb-0658bfba394c)
+
 ### Try it yourself
 
 Clone the [deepyaman/jaffle-shop GitHub repository](https://github.com/deepyaman/jaffle-shop) to download the completed Kedro Jaffle Shop project. Run `pip install -r requirements.txt` from the cloned directory to install the dependencies, including the Ibis DuckDB backend:
