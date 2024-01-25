@@ -257,7 +257,7 @@ Leveraging Ibis can also help you build truly reusable pipelines. I previously l
 
 ## What's next?
 
-If you're familiar with dbt (or even if you examined the Jaffle Shop project discussed above), you'll notice a key functionality that we didn't implement here: [validations](https://docs.getdbt.com/docs/build/validation). Kedro supports data validation through third-party plugins such as [kedro-pandera](https://kedro-pandera.readthedocs.io/en/latest/), and I've recently started work on extending pandera to support validating Ibis tables; look for a follow-up post covering that soon.
+If you're familiar with dbt (or even if you examined the Jaffle Shop project discussed above), you'll notice a key functionality that we didn't implement here: [validations](https://docs.getdbt.com/docs/build/validation). Kedro natively integrates with pytest for unit testing, which plays well for verifying the correctness of transformations developed in Ibis.  Kedro also supports data validation through third-party plugins such as [kedro-pandera](https://kedro-pandera.readthedocs.io/en/latest/), and I've recently started work on extending pandera to support validating Ibis tables; look for a follow-up post covering that soon.
 
 If you have any ideas or feedback about this tutorial or more generally on the pipeline productionisation experience, we would love to hear from you!
 
