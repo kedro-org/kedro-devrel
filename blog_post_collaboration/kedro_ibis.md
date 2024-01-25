@@ -30,7 +30,7 @@ _If you like SQL,_ [dbt](https://www.getdbt.com) provides a battle-tested framew
 
 > _"When I learned about Kedro (while at dbt Labs), I commented that it was like dbt if it were created by Python data scientists instead of SQL data analysts (including both being created out of consulting companies)."_
 >
-> —Cody Peterson, Technical Product Manager
+> —Cody Peterson, Technical Product Manager @ Voltron Data
 
 ## "What if I don't want to use SQL?"
 
