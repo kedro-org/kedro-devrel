@@ -44,7 +44,7 @@ Can we combine the flexibility and familiarity of Python with the scale and perf
 
 Since dbt represents the industry standard for SQL-first transformation workflows, let's use the Jaffle Shop example to inform the capabilities of a Python-first solution. For those unfamiliar with the Jaffle Shop project, it provides a playground dbt project for testing and demonstration purposes, akin to the Kedro spaceflights project. Take a few minutes to [try dbt with DuckDB yourself](https://github.com/dbt-labs/jaffle_shop_duckdb) or [watch a brief walkthrough of the same](https://www.loom.com/share/ed4a6f59957e43158837eb4ba0c5ed67).
 
-If you want to peek at the final solution using Kedro at this point, [jump to the "Quickstart" section](#quickstart).
+If you want to peek at the final solution using Kedro at this point, [jump to the "Try it yourself" section](#try-it-yourself).
 
 ### Creating a custom `ibis.Table` dataset
 
@@ -52,7 +52,7 @@ For our Kedro-Ibis integration, we need the ability to load and save data using 
 
 We also need to support different [materialisation strategies](https://docs.getdbt.com/docs/build/materializations). Depending on what the user configures, we call either [`create_table`](https://ibis-project.org/backends/duckdb#ibis.backends.duckdb.Backend.create_table) or [`create_view`](https://ibis-project.org/backends/duckdb#ibis.backends.duckdb.Backend.create_view).
 
-[Find the complete dataset implemention on GitHub.](https://github.com/deepyaman/jaffle-shop/blob/main/src/jaffle_shop/datasets/ibis/table_dataset.py)
+[Find the complete dataset implemention on GitHub](https://github.com/deepyaman/jaffle-shop/blob/main/src/jaffle_shop/datasets/ibis/table_dataset.py).
 
 ### Configuring backends with the `OmegaConfigLoader` using variable interpolation
 
@@ -190,7 +190,7 @@ select * from final
 
 </table>
 
-### Quickstart
+### Try it yourself
 
 Clone the [deepyaman/jaffle-shop GitHub repository](https://github.com/deepyaman/jaffle-shop) to download the completed Kedro Jaffle Shop project. Run `pip install -r requirements.txt` from the cloned directory to install the dependencies, including the Ibis DuckDB backend:
 
@@ -261,5 +261,5 @@ If you're familiar with dbt (or even if you examined the Jaffle Shop project dis
 
 If you have any ideas or feedback about this tutorial or more generally on the pipeline productionisation experience, we would love to hear from you!
 
-[^1]: [BigQuery implements its Python dataframe API by leveraging Ibis's BigQuery backend under the hood.](https://voltrondata.com/resources/google-bigframes-ibis)
-[^2]: How standardized is the SQL standard? [Gil Forsyth's PyData NYC 2022 talk demonstrates challenges arising from differences between SQL dialects.](https://www.youtube.com/watch?v=XdZklxTbCEA&t=300s) Even the [dbt-labs/jaffle_shop GitHub repository](https://github.com/dbt-labs/jaffle_shop) README disclaims, "If this steps fails, it might mean that you need to make small changes to the SQL in the models folder to adjust for the flavor of SQL of your target database."
+[^1]: [BigQuery implements its Python dataframe API by leveraging Ibis's BigQuery backend under the hood](https://voltrondata.com/resources/google-bigframes-ibis).
+[^2]: How standardized is the SQL standard? [Gil Forsyth's PyData NYC 2022 talk demonstrates challenges arising from differences between SQL dialects](https://www.youtube.com/watch?v=XdZklxTbCEA&t=300s). Even the [dbt-labs/jaffle_shop GitHub repository](https://github.com/dbt-labs/jaffle_shop) README disclaims, "If this steps fails, it might mean that you need to make small changes to the SQL in the models folder to adjust for the flavor of SQL of your target database."
