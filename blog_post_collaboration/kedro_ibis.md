@@ -259,6 +259,10 @@ Leveraging Ibis can also help you build truly reusable pipelines. I previously l
 
 If you're familiar with dbt (or even if you examined the Jaffle Shop project discussed above), you'll notice a key functionality that we didn't implement here: [validations](https://docs.getdbt.com/docs/build/validation). Kedro natively integrates with pytest for unit testing, which plays well for verifying the correctness of transformations developed in Ibis.  Kedro also supports data validation through third-party plugins such as [kedro-pandera](https://kedro-pandera.readthedocs.io/en/latest/), and I've recently started work on extending pandera to support validating Ibis tables; look for a follow-up post covering that soon.
 
+Ibis supports a subset of DDL operations, which means dbt's `incremental` and `materialized view` materializations currently don't have counterparts yet. Some Ibis backends have explored exposing materialized views. While not explicitly covered above, the `ephemeral` materialization equates to Kedro's `MemoryDataset`.
+
+Finally, dbt offers enhanced deployment functionality, such as the ability to detect and deploy only modified models; Kedro does not trivially allow detecting changes like this.
+
 If you have any ideas or feedback about this tutorial or more generally on the pipeline productionisation experience, we would love to hear from you!
 
 [^1]: [BigQuery implements its Python dataframe API by leveraging Ibis's BigQuery backend under the hood](https://voltrondata.com/resources/google-bigframes-ibis).
