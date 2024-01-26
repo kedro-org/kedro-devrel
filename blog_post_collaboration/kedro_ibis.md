@@ -11,11 +11,11 @@ If so, read on!
 
 ## The dev-prod dilemma
 
-I began using Kedro over five years ago, for everything from personal projects to large client engagements. I think most Kedro users would agree with my experience—Kedro excels in the proof-of-concept/development phase. In fact, Kedro originates from QuantumBlack, the AI consulting arm of McKinsey & Company, and it's no surprise that many other data consultancies and data science teams adopt Kedro to deliver quality code from the ground up. It helps data engineers, data scientists and machine learning engineers collaboratively build end-to-end data pipelines without throwing basic software engineering principles out the window.
+I began using Kedro over five years ago, for everything from personal projects to large client engagements. Most Kedro users would agree with my experience—Kedro excels in the proof-of-concept/development phase. In fact, Kedro originates from [QuantumBlack, AI by McKinsey](https://www.mckinsey.com/capabilities/quantumblack), and it's no surprise that many other data consultancies and data science teams adopt Kedro to deliver quality code from the ground up. It helps data engineers, data scientists and machine learning engineers collaboratively build end-to-end data pipelines without throwing basic software engineering principles out the window.
 
 In the development phase, teams often work off of data extracts—CSVs, dev databases and, everyone's favorite, Excel files. Kedro's connector ecosystem, [Kedro-Datasets](https://docs.kedro.org/projects/kedro-datasets/en/kedro-datasets-2.0.0/), makes it easy. Datasets expose a unified interface to read data from and write data to a plethora of sources. For most datasets, this involves loading the requested data into memory, processing it in a node (e.g. using pandas), and saving it back to some—often the same—place.
 
-Unfortunately, deploying the same data pipelines in production often doesn't work as well as one would hope. When teams swap out data extracts for production databases, and data volumes multiply, the solution doesn't scale. A lot of teams preemptively leverage (Py)Spark for their data engineering workloads; Kedro has offered first-class support for PySpark since its earliest days for exactly this reason. However, Spark code still frequently underperforms code executed directly on the backend engine (e.g. BigQuery), even assuming you take advantage of predicate pushdown in Spark.
+Unfortunately, deploying the same data pipelines in production often doesn't work as well as one would hope. When teams swap out data extracts for production databases, and data volumes multiply, the solution doesn't scale. A lot of teams preemptively use (Py)Spark for their data engineering workloads; Kedro has offered first-class support for PySpark since its earliest days for exactly this reason. However, Spark code still frequently underperforms code executed directly on the backend engine (e.g. BigQuery), even if you take advantage of predicate pushdown in Spark.
 
 In practice, a machine learning (software) engineer often ends up rewriting proof-of-concept code to be more performant and scalable, but this presents new challenges. First, it takes time to reimplement everything properly in another technology, and developers frequently underestimate the effort required. Also, rewritten logic, intentionally or not, doesn't always correspond 1:1 to the original, leading to unexpected results (read: bugs). Proper testing during development can mitigate, but not eliminate, correctness issues, but expecting all data science code to be unit tested is wishful thinking. Last but not least, business stakeholders don't always understand why productionising code takes so much time and resources—after all, it worked before! Who knows? Maybe scaling data engineering code shouldn't be so hard...
 
@@ -24,9 +24,9 @@ One](https://www.databricks.com/blog/2019/08/22/guest-blog-how-virgin-hyperloop-
 
 ## The SQL solution
 
-Thankfully, there exists a standardized programming language that every database (and more-or-less every major computation framework) supports: SQL![^2]
+Thankfully, there exists a standardised programming language that every database (and more-or-less every major computation framework) supports: SQL![^2]
 
-_If you like SQL,_ [dbt](https://www.getdbt.com) provides a battle-tested framework for defining and deploying data transformation workflows. [As of February 2022, over 9,000 companies were using dbt in production.](https://www.getdbt.com/blog/next-layer-of-the-modern-data-stack) Here on the Kedro team, we love dbt! In fact, we frequently recommend it for the T in ELT (Extract, Load, Transform) workflows. Kedro and dbt share similar self-stated goals: [Kedro empowers data teams to write reproducible, maintainable, and modular Python code,](https://docs.kedro.org/en/stable/introduction/index.html#introduction-to-kedro) and ["dbt is a SQL-first transformation workflow that lets teams quickly and collaboratively deploy analytics code following software engineering best practices."](https://www.getdbt.com/product/what-is-dbt)
+_If you like SQL,_ [dbt](https://www.getdbt.com) provides a battle-tested framework for defining and deploying data transformation workflows. [As of February 2022, over 9,000 companies were using dbt in production.](https://www.getdbt.com/blog/next-layer-of-the-modern-data-stack) The Kedro team frequently recommends it for the T in ELT (Extract, Load, Transform) workflows. Kedro and dbt share similar self-stated goals: [Kedro empowers data teams to write reproducible, maintainable, and modular Python code,](https://docs.kedro.org/en/stable/introduction/index.html#introduction-to-kedro) and ["dbt is a SQL-first transformation workflow that lets teams quickly and collaboratively deploy analytics code following software engineering best practices."](https://www.getdbt.com/product/what-is-dbt)
 
 > _"When I learned about Kedro (while at dbt Labs), I commented that it was like dbt if it were created by Python data scientists instead of SQL data analysts (including both being created out of consulting companies)."_
 >
@@ -42,21 +42,21 @@ Can we combine the flexibility and familiarity of Python with the scale and perf
 
 ### Revisiting the Jaffle Shop
 
-Since dbt represents the industry standard for SQL-first transformation workflows, let's use the Jaffle Shop example to inform the capabilities of a Python-first solution. For those unfamiliar with the Jaffle Shop project, it provides a playground dbt project for testing and demonstration purposes, akin to the Kedro spaceflights project. Take a few minutes to [try dbt with DuckDB yourself](https://github.com/dbt-labs/jaffle_shop_duckdb) or [watch a brief walkthrough of the same](https://www.loom.com/share/ed4a6f59957e43158837eb4ba0c5ed67).
+Since dbt represents the industry standard for SQL-first transformation workflows, let's use the Jaffle Shop example to inform the capabilities of a Python-first solution. For those unfamiliar with the Jaffle Shop project, it provides a playground dbt project for testing and demonstration purposes, akin to the Kedro spaceflights project. Take a few minutes to [try dbt with DuckDB](https://github.com/dbt-labs/jaffle_shop_duckdb) or [watch a brief walkthrough of the same](https://www.loom.com/share/ed4a6f59957e43158837eb4ba0c5ed67).
 
 If you want to peek at the final solution using Kedro at this point, [jump to the "Try it yourself" section](#try-it-yourself).
 
 ### Creating a custom `ibis.Table` dataset
 
-For our Kedro-Ibis integration, we need the ability to load and save data using the backends Ibis supports. The data will be represented in memory as an [Ibis table](https://ibis-project.org/reference/expression-tables#ibis.expr.types.relations.Table), analogous to a (lazy) pandas dataframe. The first step in using Ibis involves connecting to the desired backend; for example, see [how to connect to the DuckDB backend](https://ibis-project.org/backends/duckdb#connect). We abstract this step in the dataset configuration. We also maintain a mapping of established connections for reuse—a technique borrowed from existing dataset implementations, like [those of `pandas.SQLTableDataset` and `pandas.SQLQueryDataset`](https://github.com/kedro-org/kedro-plugins/blob/kedro-datasets-2.0.0/kedro-datasets/kedro_datasets/pandas/sql_dataset.py).
+Kedro-Ibis integration needs the ability to load and save data using the backends Ibis supports. The data will be represented in memory as an [Ibis table](https://ibis-project.org/reference/expression-tables#ibis.expr.types.relations.Table), analogous to a (lazy) pandas dataframe. The first step in using Ibis involves connecting to the desired backend; for example, see [how to connect to the DuckDB backend](https://ibis-project.org/backends/duckdb#connect). We abstract this step in the dataset configuration. We also maintain a mapping of established connections for reuse—a technique borrowed from existing dataset implementations, like [those of `pandas.SQLTableDataset` and `pandas.SQLQueryDataset`](https://github.com/kedro-org/kedro-plugins/blob/kedro-datasets-2.0.0/kedro-datasets/kedro_datasets/pandas/sql_dataset.py).
 
-We also need to support different [materialisation strategies](https://docs.getdbt.com/docs/build/materializations). Depending on what the user configures, we call either [`create_table`](https://ibis-project.org/backends/duckdb#ibis.backends.duckdb.Backend.create_table) or [`create_view`](https://ibis-project.org/backends/duckdb#ibis.backends.duckdb.Backend.create_view).
+There's also a need to support different [materialisation strategies](https://docs.getdbt.com/docs/build/materializations). Depending on what the user configures, we call either [`create_table`](https://ibis-project.org/backends/duckdb#ibis.backends.duckdb.Backend.create_table) or [`create_view`](https://ibis-project.org/backends/duckdb#ibis.backends.duckdb.Backend.create_view).
 
 [Find the complete dataset implemention on GitHub](https://github.com/deepyaman/jaffle-shop/blob/main/src/jaffle_shop/datasets/ibis/table_dataset.py).
 
 ### Configuring backends with the `OmegaConfigLoader` using variable interpolation
 
-Since Kedro 0.18.10, you can [leverage OmegaConf-native templating in catalog files](https://docs.kedro.org/en/latest/configuration/advanced_configuration.html#catalog). In our example:
+Kedro 0.18.10 introduced [OmegaConf-native templating in catalog files](https://docs.kedro.org/en/latest/configuration/advanced_configuration.html#catalog). In our example:
 
 ```yaml
 # conf/base/catalog_connections.yml
@@ -79,7 +79,7 @@ raw_customers:
 
 ### Building pipelines
 
-Develop pipelines the same way you would any other Kedro pipeline. Below, we show a node written using Ibis alongside the original dbt model. Note that Ibis solves the [parametrisation problem](https://www.youtube.com/watch?v=XdZklxTbCEA&t=514s) with vanilla Python syntax; on the other hand, the dbt counterpart uses Jinja templating.
+Develop pipelines in the usual way. Here's a node written using Ibis alongside the original dbt model. Note that Ibis solves the [parametrisation problem](https://www.youtube.com/watch?v=XdZklxTbCEA&t=514s) with vanilla Python syntax; on the other hand, the dbt counterpart uses Jinja templating.
 
 <table>
  <tr>
@@ -190,7 +190,7 @@ select * from final
 
 </table>
 
-Ibis uses deferred execution, pushing code execution to the query engine and only moving required data into memory when necessary. For example, we can examine how Ibis represents the above node logic. At the run time, Ibis generates SQL instructions from `final`'s intermediate representation (IR), executing it at one time; no intermediate `order_payments` gets created. Note that the below code requires that the `stg_orders` and `stg_payments` datasets be materialized already.
+Ibis uses deferred execution, pushing code execution to the query engine and only moving required data into memory when necessary. The output below shows how Ibis represents the above node logic. At the run time, Ibis generates SQL instructions from `final`'s intermediate representation (IR), executing it at one time; no intermediate `order_payments` gets created. Note that the below code requires that the `stg_orders` and `stg_payments` datasets be materialised already.
 
 ```python
 (kedro-jaffle-shop) deepyaman@Deepyamans-MacBook-Air jaffle-shop % kedro ipython
@@ -258,7 +258,7 @@ Selection[r3]
 In [7]: final.visualize()
 ```
 
-In the final step, we draw a visual representation of the expression tree. If you're following along, this step requires the `graphviz` Python library be installed. In practice, we leave these complexities up to Ibis and the underlying engine!
+In the final step, we draw a visual representation of the expression tree. This step requires the `graphviz` Python library be installed. In practice, we leave these complexities up to Ibis and the underlying engine!
 
 ![tmpip_tmztu](https://github.com/kedro-org/kedro-devrel/assets/14007150/e149b55b-3dbb-4953-affb-0658bfba394c)
 
@@ -272,7 +272,7 @@ cd jaffle-shop
 pip install -r requirements.txt
 ```
 
-Typically, your source data already resides in a data warehouse. However, for this toy example, the project's `data` folder includes CSV files that we need to initialize the database with:
+Typically, the source data already resides in a data warehouse. However, for this toy example, the project's `data` folder includes CSV files necessary to initialise the database:
 
 ```bash
 kedro run --pipeline seed
@@ -315,23 +315,23 @@ Voilà! Feel free to confirm that the expected tables and views got created:
 
 ```
 
-As always, we can view the pipeline using Kedro-Viz:
+View the pipeline using Kedro-Viz with `kedro viz run`
 
 <img width="1470" alt="image" src="https://github.com/kedro-org/kedro-devrel/assets/14007150/9fedaf00-ecf6-418f-9c1e-a98844994ba2">
 
 ## But wait... there's more!
 
-Making pipeline productionisation easier alone may justify adopting Ibis in your Kedro workflows, but other situations from my past experience also come to mind.
+Making pipeline productionisation easier alone may justify adopting Ibis into a Kedro workflow, but other situations from my past experience also come to mind.
 
 Have you ever found yourself developing data pipelines against an existing data warehouse, even though you know that the data infrastructure team is currently migrating to a different database solution? You expect to rewrite some amount of your code—unless you use Ibis?
 
-Leveraging Ibis can also help you build truly reusable pipelines. I previously led development of a Kedro-based code asset that provided a suite of reusable pipelines for customer analytics. We decided to use PySpark for data engineering, but many of our users didn't need to use PySpark. One major retailer stored all of their data in Oracle, and they ended up with a suboptimal workflow wherein they extracted data into Spark and did all the work there. Other teams looked at our pipelines for inspiration, but ended up rewriting them for their infrastructure—not our intention in delivering prebuilt pipelines. Last but not least, we spent so much time and effort setting up Spark on locked-down Windows machines, so data scientists could play with the pipelines we provided; being able to run the same logic using DuckDB or pandas locally would have been a godsend!
+Using Ibis can also help you build truly reusable pipelines. I previously led development of a Kedro-based code asset that provided a suite of reusable pipelines for customer analytics. We decided to use PySpark for data engineering, but many of our users didn't need to use PySpark. One major retailer stored all of their data in Oracle, and they ended up with a suboptimal workflow wherein they extracted data into Spark and did all the work there. Other teams looked at our pipelines for inspiration, but ended up rewriting them for their infrastructure—not our intention in delivering prebuilt pipelines. Last but not least, we spent so much time and effort setting up Spark on locked-down Windows machines, so data scientists could play with the pipelines we provided; being able to run the same logic using DuckDB or pandas locally would have been a godsend!
 
 ## What's next?
 
 If you're familiar with dbt (or even if you examined the Jaffle Shop project discussed above), you'll notice a key functionality that we didn't implement here: [validations](https://docs.getdbt.com/docs/build/validation). Kedro natively integrates with pytest for unit testing, which plays well for verifying the correctness of transformations developed in Ibis.  Kedro also supports data validation through third-party plugins such as [kedro-pandera](https://kedro-pandera.readthedocs.io/en/latest/), and I've recently started work on extending pandera to support validating Ibis tables; look for a follow-up post covering that soon.
 
-Ibis supports a subset of DDL operations, which means dbt's `incremental` and `materialized view` materializations currently don't have counterparts yet. Some Ibis backends have explored exposing materialized views. While not explicitly covered above, the `ephemeral` materialization equates to Kedro's `MemoryDataset`.
+Ibis supports a subset of DDL operations, which means dbt's `incremental` and `materialized view` materialisations currently don't have counterparts yet. Some Ibis backends have explored exposing materialised views. While not explicitly covered above, the `ephemeral` materialisation equates to Kedro's `MemoryDataset`.
 
 Finally, dbt offers enhanced deployment functionality, such as the ability to detect and deploy only modified models; Kedro does not trivially allow detecting changes like this.
 
