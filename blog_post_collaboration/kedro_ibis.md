@@ -333,7 +333,7 @@ If you're familiar with dbt (or even if you examined the Jaffle Shop project dis
 
 Ibis supports a subset of DDL operations, which means dbt's `incremental` and `materialized view` materialisations currently don't have counterparts yet. Some Ibis backends have explored exposing materialised views. While not explicitly covered above, the `ephemeral` materialisation equates to Kedro's `MemoryDataset`.
 
-Finally, dbt offers enhanced deployment functionality, such as the ability to detect and deploy only modified models; Kedro does not trivially allow detecting changes like this.
+Finally, dbt offers enhanced deployment functionality, like the ability to detect and deploy only modified models; it's less straightforward to detect such changes with Kedro.
 
 If you have any ideas or feedback about this tutorial or more generally on the pipeline productionisation experience, we would love to hear from you!
 
