@@ -315,7 +315,7 @@ Voilà! Feel free to confirm that the expected tables and views got created:
 
 ```
 
-View the pipeline using Kedro-Viz with `kedro viz run`
+View the pipeline using Kedro-Viz with `kedro viz run`:
 
 <img width="1470" alt="image" src="https://github.com/kedro-org/kedro-devrel/assets/14007150/9fedaf00-ecf6-418f-9c1e-a98844994ba2">
 
