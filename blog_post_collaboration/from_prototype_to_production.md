@@ -16,14 +16,13 @@ In this tutorial, you’ll build a data pipeline to forecast outcomes of the Mar
 
 - Data science in production: the good, the bad, and the ugly
 - What is Kedro?
-- Kedro and data orchestrators
 - How does Kedro fit into the data science ecosystem?
+- Kedro and data orchestrators
 
 ### Get started with Kedro (60 minutes)
 
-- Create a Kedro project from scratch
-- Create a Kedro project from a starter
 - Use Kedro from a Jupyter notebook
+- Create a Kedro project
 - Set up the Kedro Data Catalog
 - Explore the data
 - Refactor your data processing code into functions
@@ -67,7 +66,7 @@ By the end of this tutorial, you should:
 
 # Notes
 
-I already have a [working solution](https://github.com/deepyaman/dagster-dunks) that I will to clean up to create the tutorial. The code is based on https://www.kaggle.com/code/rustyb/paris-madness-2023/notebook, which was originally adapted from https://github.com/fakyras/ncaa_women_2018/blob/master/win_ncaa.R.
+I already have a [working solution](https://github.com/deepyaman/dagster-dunks) that I will need to clean up to create the tutorial. The code is based on https://www.kaggle.com/code/rustyb/paris-madness-2023/notebook, which was originally adapted from https://github.com/fakyras/ncaa_women_2018/blob/master/win_ncaa.R.
 
 ## Prerequisites
 
